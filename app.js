@@ -12,16 +12,30 @@ app.use(cors({
     origin: '*'
 }));
 
-app.get('/get-top-searched', async function (req, res) {
-    const selectQuery= "SELECT ?v WHERE  { GRAPH <http://sandbox.bordercloud.com/genealogie> { <http://sandbox.bordercloud.com/celebrity> <http://sandbox.bordercloud.com/views> ?v . } }"
-    return await fetch('https://sandbox.bordercloud.com/sparql?query=' + selectQuery, {method:'GET',
-        headers: {'Authorization': 'Basic ' + Buffer.from('ESGI-WEB-2020:ESGI-WEB-2020-heUq9f').toString('base64'), 'Content-type': 'application/json'}})
-        .then(response => response.json())
-        .then(json => json)
+app.get('/get-top-searched', function (req, res) {
+    const selectQuery= "SELECT ?name (COUNT(?ip) AS ?count) WHERE { GRAPH <genealogie>" +
+        "       {" +
+        "               ?id <client:ip> ?ip ." +
+        "               ?id <person:name> ?name ." +
+        "       }" +
+        "} GROUP BY ?name ORDER BY DESC(?count) LIMIT 3";
+    return fetch('https://sandbox.bordercloud.com/sparql?query=' + selectQuery, {
+        method: 'GET',
+        headers: {
+            'Authorization': 'Basic ' + Buffer.from('ESGI-WEB-2020:ESGI-WEB-2020-heUq9f').toString('base64'),
+            'Content-type': 'application/json'
+        }
+    }).then(response => response.json())
+        .then(json => res.send(json.results.bindings.map(item => {
+            return {
+                name: item.name.value,
+                count: item.count.value
+            }
+        })))
         .catch(err => console.log(err));
 });
 
-app.post('/search-person', async function (req, res) {
+app.post('/search-person', function (req, res) {
     const personName= req.body.personName;
     const personId= req.body.id;
     const clientIp = requestIp.getClientIp(req);
@@ -33,7 +47,7 @@ app.post('/search-person', async function (req, res) {
 
     console.log(insertQuery);
 
-    await fetch('https://sandbox.bordercloud.com/sparql?update=' + insertQuery, {method:'POST',
+    fetch('https://sandbox.bordercloud.com/sparql?update=' + insertQuery, {method:'POST',
         headers: {'Authorization': 'Basic ' + Buffer.from('ESGI-WEB-2020:ESGI-WEB-2020-heUq9f').toString('base64'), 'Content-type': 'application/json'}})
         .then(response => response.json())
         .then(json => console.log(json))
