@@ -7,7 +7,6 @@ const bodyParser = require('body-parser');
 
 
 app.use(bodyParser.json());
-
 app.use(cors({
     origin: '*'
 }));
@@ -47,13 +46,17 @@ app.post('/search-person', function (req, res) {
 
     console.log(insertQuery);
 
-    fetch('https://sandbox.bordercloud.com/sparql?update=' + insertQuery, {method:'POST',
-        headers: {'Authorization': 'Basic ' + Buffer.from('ESGI-WEB-2020:ESGI-WEB-2020-heUq9f').toString('base64'), 'Content-type': 'application/json'}})
+    fetch('https://sandbox.bordercloud.com/sparql?update=' + insertQuery, {
+        method:'POST',
+        headers: {
+            'Authorization': 'Basic ' + Buffer.from('ESGI-WEB-2020:ESGI-WEB-2020-heUq9f').toString('base64'),
+            'Content-type': 'application/json'
+        }})
         .then(response => response.json())
-        .then(json => console.log(json))
+        .then(json => {
+            return res.send({message: 'ok'});
+        })
         .catch(err => console.log(err));
-
-    return res.send({message: 'ok'});
 });
 
 
